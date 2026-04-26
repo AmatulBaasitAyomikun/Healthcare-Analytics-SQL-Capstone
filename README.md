@@ -170,7 +170,9 @@ This project taught me that data analytics in healthcare is as much about **aski
 
 ## 👤 Author
 AmatulBaasit Ghazal
+
 LinkedIn: https://www.linkedin.com/in/amatulbaasitghazal
+
 Built as a capstone project for the **Healthcare Analytics class at Zion Tech Hub**
 
 ---

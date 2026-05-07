@@ -143,7 +143,6 @@ JOIN admission_details a ON p.pt_id = a.pt_id
 GROUP BY p.sex
 
 UNION ALL
-
 SELECT 
     p.sex,
     'Stroke' AS chronic_illness,
@@ -264,6 +263,17 @@ ORDER BY no_of_dama DESC
 LIMIT 5;
 
 
+SELECT 
+    d.specialization,
+    COUNT(*) AS total_patients,
+    COUNT(*) FILTER (WHERE a.dama = 'Yes') AS total_dama,
+    ROUND(COUNT(*) FILTER (WHERE a.dama = 'Yes') * 100.0 / COUNT(*), 1) AS dama_rate
+FROM doctors d
+INNER JOIN admission_details a ON d.doctor_id = a.doctor_id
+GROUP BY d.specialization
+ORDER BY dama_rate DESC;
+
+
 							----*** CHRONIC ILLNESS ANALYSIS ***----
 							
 --- 10. What are the total counts and percentages of patients with each chronic condition? ---
@@ -338,45 +348,46 @@ FROM dialysis_table;
 
 --- 13. What is the mortality rate among patients with each chronic illness? ---
 
-SELECT 'cancer' AS chronic_illness,
-		COUNT(*) FILTER (WHERE cancer = 'Yes') AS cancer_patients,
-		COUNT(*) FILTER (WHERE dead = 'Yes' AND cancer = 'Yes') AS no_of_death,
-		ROUND(COUNT(*) FILTER (WHERE dead = 'Yes' AND cancer = 'Yes') * 100.0 / COUNT(*),1)	AS percentage_death	
+SELECT 
+    'Cancer' AS chronic_illness,
+    COUNT(*) FILTER (WHERE cancer = 'Yes') AS total_patients,
+    COUNT(*) FILTER (WHERE cancer = 'Yes' AND dead = 'Yes') AS total_deaths,
+    ROUND(COUNT(*) FILTER (WHERE cancer = 'Yes' AND dead = 'Yes') * 100.0 
+        / NULLIF(COUNT(*) FILTER (WHERE cancer = 'Yes'), 0), 1) AS mortality_rate
 FROM admission_details
-
 UNION ALL
-
-SELECT 'Ckd' AS chronic_illness,
-		COUNT(*) FILTER (WHERE ckd = 'Yes') AS ckd_patients,
-		COUNT(*) FILTER (WHERE dead = 'Yes' AND ckd = 'Yes') AS no_of_death,
-		ROUND(COUNT(*) FILTER (WHERE dead = 'Yes' AND ckd = 'Yes') * 100.0 / COUNT(*),1)	AS percentage_death	
+SELECT 
+    'Diabetes Mellitus',
+    COUNT(*) FILTER (WHERE dm = 'Yes'),
+    COUNT(*) FILTER (WHERE dm = 'Yes' AND dead = 'Yes'),
+    ROUND(COUNT(*) FILTER (WHERE dm = 'Yes' AND dead = 'Yes') * 100.0 
+        / NULLIF(COUNT(*) FILTER (WHERE dm = 'Yes'), 0), 1)
 FROM admission_details
-
 UNION ALL
-
-SELECT 'dm' AS chronic_illness,
-		COUNT(*) FILTER (WHERE dm = 'Yes') AS diabetes_patients,
-		COUNT(*) FILTER (WHERE dead = 'Yes' AND dm = 'Yes') AS no_of_death,
-		ROUND(COUNT(*) FILTER (WHERE dead = 'Yes' AND dm = 'Yes') * 100.0 / COUNT(*),1)	AS percentage_death	
+SELECT 
+    'CKD',
+    COUNT(*) FILTER (WHERE ckd = 'Yes'),
+    COUNT(*) FILTER (WHERE ckd = 'Yes' AND dead = 'Yes'),
+    ROUND(COUNT(*) FILTER (WHERE ckd = 'Yes' AND dead = 'Yes') * 100.0 
+        / NULLIF(COUNT(*) FILTER (WHERE ckd = 'Yes'), 0), 1)
 FROM admission_details
-
 UNION ALL
-
-SELECT 'pud' AS chronic_illness,
-		COUNT(*) FILTER (WHERE pud = 'Yes') AS pud_patients,
-		COUNT(*) FILTER (WHERE dead = 'Yes' AND pud = 'Yes') AS no_of_death,
-		ROUND(COUNT(*) FILTER (WHERE dead = 'Yes' AND pud = 'Yes') * 100.0 / COUNT(*),1)	AS percentage_death	
+SELECT 
+    'Stroke',
+    COUNT(*) FILTER (WHERE stroke = 'Yes'),
+    COUNT(*) FILTER (WHERE stroke = 'Yes' AND dead = 'Yes'),
+    ROUND(COUNT(*) FILTER (WHERE stroke = 'Yes' AND dead = 'Yes') * 100.0 
+        / NULLIF(COUNT(*) FILTER (WHERE stroke = 'Yes'), 0), 1)
 FROM admission_details
-
 UNION ALL
-
-SELECT 'stroke' AS chronic_illness,
-		COUNT(*) FILTER (WHERE stroke = 'Yes') AS stroke_patients,
-		COUNT(*) FILTER (WHERE dead = 'Yes' AND stroke = 'Yes') AS no_of_death,
-		ROUND(COUNT(*) FILTER (WHERE dead = 'Yes' AND stroke = 'Yes') * 100.0 / COUNT(*),1)	AS percentage_death	
+SELECT 
+    'Peptic Ulcer Disease',
+    COUNT(*) FILTER (WHERE pud = 'Yes'),
+    COUNT(*) FILTER (WHERE pud = 'Yes' AND dead = 'Yes'),
+    ROUND(COUNT(*) FILTER (WHERE pud = 'Yes' AND dead = 'Yes') * 100.0 
+        / NULLIF(COUNT(*) FILTER (WHERE pud = 'Yes'), 0), 1)
 FROM admission_details
-
-ORDER BY percentage_death DESC;
+ORDER BY mortality_rate DESC;
 
 
 										---*** LIFESTYLE ANALYSIS ***---
@@ -433,6 +444,18 @@ JOIN admission_details a
 	ON d.doctor_id = a.doctor_id
 GROUP BY doctor, specialization
 ORDER BY no_of_patients_treated DESC;
+
+SELECT 
+    d.doctor,
+    d.specialization,
+    COUNT(*) AS total_patients,
+    ROUND(COUNT(*) FILTER (WHERE a.dead = 'Yes') * 100.0 / COUNT(*), 1) AS mortality_rate,
+    ROUND(COUNT(*) FILTER (WHERE a.dama = 'Yes') * 100.0 / COUNT(*), 1) AS dama_rate,
+    ROUND(AVG(a.admission_duration), 1) AS avg_admission_duration
+FROM doctors d
+INNER JOIN admission_details a ON d.doctor_id = a.doctor_id
+GROUP BY d.doctor, d.specialization
+ORDER BY total_patients DESC;
 
 
 --- 18. Which doctors have the highest DAMA rates (the percentage of their patients who left against medical advice)? ---
